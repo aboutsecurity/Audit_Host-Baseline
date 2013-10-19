@@ -1,0 +1,39 @@
+#!/bin/sh
+
+# Written by Ismael Valenzuela, McAfee Foundstone
+# ismael.valenzuela@foundstone.com
+# version 1.0 - August 2012
+#
+# Script to compare baseline files 
+# Defaults to comparing newly created baseline file to baseline of previous day 
+# even if multiple baselines exist, it always take the latest
+
+# Get date and determine filename to compare, assuming a daily run
+PREVDATE=`date +%m%d%y --date="-1 day"` 
+PREVBASE=`hostname`-$PREVDATE
+
+# Specify what baseline command should be used
+COMMAND="baseline-1.0"
+
+# The directory where the baseline files and the latest Exceptions are stored
+CWD="/var/baseline/"
+cd $CWD
+
+# Wildcardmatch baseline filename of previous day (time unknown)
+PREVFILENAME="${CWD}${PREVBASE}_??????.${COMMAND}"
+
+# Iterate through all possible matches and retain the latest (timewise)
+NUMFILES=0
+for PREVFILE in $PREVFILENAME ; do
+	if [ -f "$PREVFILE" ] ; then
+		(( NUMFILES++ ))
+	fi
+done
+
+# If a previous baseline exists, compare it with new baseline output 
+if [ $NUMFILES != 0 ] ; then
+	sh /root/foundstone/${COMMAND} $PREVFILE
+	else
+# If no baseline exists yet, create one (and consequently send it out to syslog)
+		sh /root/foundstone/${COMMAND}
+fi
